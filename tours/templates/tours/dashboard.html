@@ -1,0 +1,112 @@
+{% extends "tours/base.html" %}
+{% block title %}Monitor — player.ev360.az{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <h1>Tours</h1>
+  <p class="sub">Status of every submitted Matterport model and its generated local link.</p>
+
+  <form method="get" style="margin-bottom:20px;display:flex;gap:10px;">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by name or Matterport ID..." style="flex:1;">
+    <button type="submit" style="margin-top:0;">Search</button>
+    {% if query %}
+      <a href="{% url 'dashboard' %}" class="btn" style="background:#1c2128;color:var(--muted);text-decoration:none;display:flex;align-items:center;padding:0 16px;">Clear</a>
+    {% endif %}
+  </form>
+
+  {% if tours %}
+  <div style="overflow-x: auto; width: 100%;">
+  <table class="tour-table" style="width: 100%;">
+    <thead>
+      <tr>
+        <th style="white-space: nowrap;">Name</th>
+        <th style="white-space: nowrap;">Matterport ID</th>
+        <th style="white-space: nowrap;">Status</th>
+        <th style="white-space: nowrap;">Link</th>
+        <th style="white-space: nowrap;">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tours-tbody">
+      {% for tour in tours %}
+      <tr data-tour-id="{{ tour.id }}">
+        <td style="white-space: nowrap;">{{ tour.name|default:"—" }}</td>
+        <td style="white-space: nowrap;">{{ tour.matterport_id }}</td>
+
+        <td style="white-space: nowrap;" class="status-cell">
+          <span class="badge badge-{{ tour.status }}">{{ tour.get_status_display }}</span>
+        </td>
+
+        <td style="white-space: nowrap;" class="link-cell">
+          {% if tour.status == "ready" %}
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
+              <a href="{{ tour.local_url }}" target="_blank"><code>{{ tour.local_url }}</code></a>
+              <button type="button" class="copy-btn" data-url="{{ tour.local_url }}" onclick="copyTourLink(this)">Copy</button>
+            </div>
+          {% else %}
+            —
+          {% endif %}
+
+          {% if tour.status == "failed" and tour.error_message %}
+            <div style="color:var(--fail);font-size:11px;margin-top:4px;">{{ tour.error_message|truncatechars:120 }}</div>
+          {% endif %}
+        </td>
+
+        <td style="white-space: nowrap;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
+            <a href="{% url 'edit_tour' tour.id %}" class="btn" style="background:var(--accent);color:#fff;text-decoration:none;display:inline-block;white-space:nowrap;">Edit</a>
+            <form method="post" action="{% url 'delete_tour' tour.id %}"
+                  onsubmit="return confirm('Delete this tour permanently?');" style="display:inline-block; margin:0; padding:0;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger" style="display:inline-block;white-space:nowrap;">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  {% else %}
+    {% if query %}
+      <div class="empty">No tours match "{{ query }}". <a href="{% url 'dashboard' %}">Clear search</a></div>
+    {% else %}
+      <div class="empty">No tours submitted yet. <a href="{% url 'submit' %}">Submit one →</a></div>
+    {% endif %}
+  {% endif %}
+</div>
+
+<script>
+function copyTourLink(btn) {
+  navigator.clipboard.writeText(btn.dataset.url).then(() => {
+    const original = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  });
+}
+
+function pollTourStatus() {
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get("q") || "";
+  const url = "{% url 'tours_status_json' %}" + (q ? "?q=" + encodeURIComponent(q) : "");
+
+  fetch(url)
+    .then((res) => res.json())
+    .then((data) => {
+      // If nothing is downloading/pending anymore, the state has changed
+      // since this page was rendered — reload to show the final result
+      // (name, link, badge, everything) exactly as the server renders it.
+      if (!data.has_active_tours) {
+        clearInterval(pollingIntervalId);
+        window.location.reload();
+      }
+    })
+    .catch((err) => console.error("Status poll failed:", err));
+}
+
+let pollingIntervalId = null;
+{% if has_active_tours %}
+  pollingIntervalId = setInterval(pollTourStatus, 3000);
+{% endif %}
+</script>
+{% endblock %}

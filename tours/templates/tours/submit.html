@@ -1,0 +1,13 @@
+{% extends "tours/base.html" %}
+{% block title %}Submit a tour — player.ev360.az{% endblock %}
+{% block content %}
+<div class="panel">
+  <h1>Submit a Matterport link</h1>
+  <p class="sub">Paste a matterport.com link. We'll download it in the background and give ev360.az a local link back — no Matterport branding.</p>
+  <form method="post">
+    {% csrf_token %}
+    <input type="url" name="url" placeholder="https://my.matterport.com/show/?m=XXXXXXXXXXX" required>
+    <button type="submit">Start download</button>
+  </form>
+</div>
+{% endblock %}

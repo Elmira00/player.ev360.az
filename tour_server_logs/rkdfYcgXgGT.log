@@ -1,0 +1,32 @@
+C:\Users\Elmira\Desktop\matterport-dl\matterport-dl.py:42: DeprecationWarning: 'asyncio.WindowsSelectorEventLoopPolicy' is deprecated and slated for removal in Python 3.16
+  asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+C:\Users\Elmira\Desktop\matterport-dl\matterport-dl.py:42: DeprecationWarning: 'asyncio.set_event_loop_policy' is deprecated and slated for removal in Python 3.16
+  asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /?m=rkdfYcgXgGT HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /JSNetProxy.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/runtime~showcase.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /css/packages-nova-ui.css HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /css/showcase.css HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/browser-check.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /JSNetProxy.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /css/packages-nova-ui.css HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /css/showcase.css HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/runtime~showcase.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/browser-check.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/packages-nova-ui.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/packages-cwf-util.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/packages-cwf-core.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /webgl-vendors/three/0.184.0/three.module.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/cwf-core.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/vendors-react.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/vendors-common.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/showcase.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /webgl-vendors/three/0.184.0/three.core.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/2593.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/5841.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/633.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/2095.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/235.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /js/5637.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jul/2026 04:48:40] "GET /css/init.css HTTP/1.1" 200 -

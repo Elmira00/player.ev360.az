@@ -1,0 +1,100 @@
+{% extends "tours/base.html" %}
+{% block title %}Edit tour — player.ev360.az{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <h1>Edit tour</h1>
+  <p class="sub">Update the tour's name or source link, or re-trigger the download.</p>
+
+  <!-- Edit Form -->
+  <form method="post">
+    {% csrf_token %}
+    <div style="margin-bottom: 16px;">
+      <label style="display:block;margin-bottom:6px;font-size:13px;color:var(--muted);font-weight:500;">Name</label>
+      <input type="text" name="name" value="{{ tour.name }}" placeholder="Untitled tour">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display:block;margin-bottom:6px;font-size:13px;color:var(--muted);font-weight:500;">Source URL</label>
+      <input type="url" name="source_url" value="{{ tour.source_url }}">
+    </div>
+
+    <button type="submit" class="primary-btn" style="margin-top:0;">Save changes</button>
+  </form>
+
+  <!-- Details Section -->
+  <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border);">
+    <h2 style="font-size:16px;margin:0 0 16px;color:var(--text);">Details</h2>
+    
+    <table class="details-table">
+      <tr>
+        <th>Matterport ID</th>
+        <td><code>{{ tour.matterport_id }}</code></td>
+      </tr>
+      <tr>
+        <th>Status</th>
+        <td><span class="badge badge-{{ tour.status }}">{{ tour.get_status_display }}</span></td>
+      </tr>
+      <tr>
+        <th>Local path</th>
+        <td style="word-break: break-all;">{{ tour.local_path|default:"—" }}</td>
+      </tr>
+      <tr>
+        <th>Error message</th>
+        <td>
+          {% if tour.error_message %}
+            <span style="color:var(--fail);">{{ tour.error_message }}</span>
+          {% else %}
+            <span style="color:var(--muted);">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>Created</th>
+        <td>{{ tour.created_at|date:"M d, Y H:i" }}</td>
+      </tr>
+      <tr>
+        <th>Updated</th>
+        <td>{{ tour.updated_at|date:"M d, Y H:i" }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Bottom Action Row -->
+  <div style="margin-top:28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+    <form method="post" onsubmit="return confirm('Re-download this tour? This will restart the process from scratch.');" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="retry">
+      <button type="submit" class="btn" style="background:var(--warn);color:#171a21;font-weight:600;">Retry download</button>
+    </form>
+
+    <a href="{% url 'dashboard' %}" style="color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;transition:color 0.2s;" onmouseover="this.style.color=var(--text)" onmouseout="this.style.color=var(--muted)">← Back to dashboard</a>
+  </div>
+</div>
+
+<style>
+  /* Dedicated Details Table Styles */
+  .details-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .details-table th, 
+  .details-table td {
+    padding: 12px 0;
+    text-align: left !important; /* Forces strict left alignment */
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .details-table th {
+    width: 140px; /* Fixed width for key labels */
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .details-table td {
+    color: var(--text);
+  }
+</style>
+{% endblock %}
