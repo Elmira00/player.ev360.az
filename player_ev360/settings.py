@@ -7,7 +7,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-change-me")
 DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = os.environ.get(
-    "ALLOWED_HOSTS", "127.0.0.1,localhost"
+    "ALLOWED_HOSTS", "player.ev360.az,127.0.0.1,localhost"
 ).split(",")
 
 INSTALLED_APPS = [
@@ -70,12 +70,12 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-MATTERPORT_DL_DIR = os.environ.get("MATTERPORT_DL_DIR", str(BASE_DIR.parent / "matterport-dl"))
+MATTERPORT_DL_DIR = os.environ.get("MATTERPORT_DL_DIR", "/home/emlak/matterport_dl_linux/matterport-dl")
 
 MATTERPORT_DOWNLOADS_DIR = os.path.join(MATTERPORT_DL_DIR, "downloads")
 
 
-MATTERPORT_DL_PYTHON = os.environ.get("MATTERPORT_DL_PYTHON", "python")
+MATTERPORT_DL_PYTHON = os.environ.get("MATTERPORT_DL_PYTHON", "python3")
 
 PLAYER_PUBLIC_BASE_URL = os.environ.get("PLAYER_PUBLIC_BASE_URL", "http://127.0.0.1:8000")
 

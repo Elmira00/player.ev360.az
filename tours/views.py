@@ -1,4 +1,5 @@
 import shutil
+import os
 import time
 import urllib.error
 import urllib.request
@@ -135,15 +136,26 @@ def root_asset_proxy_view(request, subpath):
     return tour_proxy_view(request, matterport_id=match.group(1), subpath=subpath)
 
 
+from django.conf import settings
 @login_required
 @require_POST
 def delete_tour_view(request, tour_id):
     tour = get_object_or_404(MatterportTour, id=tour_id)
 
+    # Stop any running per-tour server BEFORE touching the folder, otherwise
+    # rmtree can silently fail on Windows because a file handle is still open.
     stop_server(tour.matterport_id)
 
-    if tour.local_path:
-        local_path = Path(tour.local_path)
+    # Figure out the folder to delete. Successful downloads have local_path
+    # set, but failed ones don't — fall back to the expected path built from
+    # matterport_id, since matterport-dl.py may have partially downloaded
+    # files there even if the task ultimately failed.
+    candidate_path = tour.local_path or os.path.join(
+        settings.MATTERPORT_DOWNLOADS_DIR, tour.matterport_id
+    )
+
+    if candidate_path:
+        local_path = Path(candidate_path)
         if local_path.exists():
             try:
                 shutil.rmtree(local_path)
@@ -261,3 +273,27 @@ def tours_status_json(request):
     ).exists()
 
     return JsonResponse({"tours": data, "has_active_tours": has_active_tours})
+
+
+
+@csrf_exempt
+def matterport_cdn_proxy_view(request, subpath):
+    """Proxies static.matterport.com CDN assets (webgl-vendors, etc.) that
+    matterport-dl.py doesn't rewrite to local paths, so the browser never
+    makes a direct cross-origin request that gets blocked by CORS."""
+    query = request.META.get("QUERY_STRING", "")
+    url = f"https://static.matterport.com/{subpath}"
+    if query:
+        url += f"?{query}"
+    req = urllib.request.Request(url, method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return HttpResponse(
+                resp.read(),
+                status=resp.status,
+                content_type=resp.headers.get("Content-Type", "application/octet-stream"),
+            )
+    except urllib.error.HTTPError as e:
+        return HttpResponse(e.read(), status=e.code)
+    except Exception as e:
+        return HttpResponse(f"Failed to fetch CDN asset: {e}", status=502)
