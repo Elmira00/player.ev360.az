@@ -38,6 +38,15 @@ def rewrite_cdn_urls(matterport_id: str, download_root: str) -> None:
             print(f"[rewrite_cdn_urls] Could not patch {path}: {e}")
 
 
+def _tour_actually_downloaded(expected_dir: str) -> bool:
+    """matterport-dl.py sometimes exits with a non-zero code after fully
+    downloading the main tour, because it then tries to fetch a *secondary*
+    optional asset (e.g. the defurnished view, or extra plugin data) which
+    can fail (e.g. rate limited). The core tour is still usable in that case,
+    so check for the essential file rather than trusting the exit code alone."""
+    return os.path.isfile(os.path.join(expected_dir, "index.html"))
+
+
 @shared_task(bind=True)
 def download_matterport_tour(self, tour_id: int):
     tour = MatterportTour.objects.get(id=tour_id)
@@ -45,6 +54,9 @@ def download_matterport_tour(self, tour_id: int):
     tour.celery_task_id = self.request.id or ""
     tour.error_message = ""
     tour.save(update_fields=["status", "celery_task_id", "error_message", "updated_at"])
+
+    expected_dir = os.path.join(settings.MATTERPORT_DOWNLOADS_DIR, tour.matterport_id)
+
     try:
         subprocess.run(
             [settings.MATTERPORT_DL_PYTHON, "matterport-dl.py", tour.source_url],
@@ -54,7 +66,7 @@ def download_matterport_tour(self, tour_id: int):
             capture_output=True,
             text=True,
         )
-        expected_dir = os.path.join(settings.MATTERPORT_DOWNLOADS_DIR, tour.matterport_id)
+
         if not os.path.isdir(expected_dir):
             raise RuntimeError(
                 f"matterport-dl.py exited without error but expected output dir "
@@ -67,12 +79,34 @@ def download_matterport_tour(self, tour_id: int):
         tour.status = MatterportTour.Status.READY
         if not tour.name:
             tour.name = fetch_tour_name(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
+
     except subprocess.CalledProcessError as e:
-        tour.status = MatterportTour.Status.FAILED
-        tour.error_message = e.stderr[-4000:] if e.stderr else str(e)
+        # Check if the CORE tour actually finished downloading before the
+        # script crashed on a secondary/optional asset (common cause: a
+        # defurnished-view fetch or extra plugin getting rate-limited AFTER
+        # the main tour is already fully saved).
+        if _tour_actually_downloaded(expected_dir):
+            print(
+                f"[download_matterport_tour] matterport-dl.py exited with an error, "
+                f"but the core tour files exist at {expected_dir} — treating as READY."
+            )
+            rewrite_cdn_urls(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
+            tour.local_path = expected_dir
+            tour.status = MatterportTour.Status.READY
+            tour.error_message = (
+                "Note: a secondary asset (e.g. defurnished view) failed to download, "
+                "but the main tour is complete and viewable."
+            )
+            if not tour.name:
+                tour.name = fetch_tour_name(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
+        else:
+            tour.status = MatterportTour.Status.FAILED
+            tour.error_message = e.stderr[-4000:] if e.stderr else str(e)
+
     except Exception as e:
         tour.status = MatterportTour.Status.FAILED
         tour.error_message = str(e)
+
     tour.save()
 
 

@@ -1,0 +1,33 @@
+127.0.0.1 - - [31/Jul/2026 13:56:16] "GET /css/showcase.css HTTP/1.1" 200127.0.0.1 - - [31/Jul/2026 13:56:16] "GET /js/cwf-core.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:16] "GET /webgl-vendors/three/0.184.0/three.core.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:17] "GET /js/633.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:17] "GET /js/292.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:18] code 404, message File not found
+127.0.0.1 - - [31/Jul/2026 13:56:18] "GET /images/favicons/favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [31/Jul/2026 13:56:18] "GET /js/late.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:18] "GET /css/7902.css HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:18] "GET /js/2638.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:18] "GET /locale/strings.json HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:18] "GET /js/8287.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:18] "GET /js/6888.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:18] "GET /api/mp/models/graph?operationName=GetSnapshots&variables=%7B%22modelId%22%3A%22PVJeCSYtgU4%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%226cc214b557ce3a722b973e119b784c245cae184fc099db44c17ccf3704127.0.0.1 - - [31/Jul/2026 13:56:18] "GET /js/5160.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:18] "GET /js/8539.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:19] "GET /js/1633.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:19] "GET /fonts/ibm-plex-sans-700.woff2 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:19] "GET /js/3907.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:19] "GET /js/528.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:19] "GET //webgl-vendors/three/0.184.0/libs/draco/gltf/draco_decoder.wasm HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:19]127.0.0.1 - - [31/Jul/2026 13:56:19] "GET /api/mp/models/graph?operationName=GetRoomB127.0.0.1 - - [31/Jul/2026 13:56:20] "GET /js/1884.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:20] "GET /js/autotours.js HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:20] "GET /images/vert_arrows.png HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:20] "GET /fonts/mp-font.woff2?a6a6f68949cbf8824b37a0a85749a756 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:20] "GET /images/nav_help_mouse_ctrl_click.png HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 13:56:20] "GET /fonts/roboto-500.woff2 HT127.0.0.1 - - 127.0.0.1 - - [31/Jul/2026 13:56:20] "GET /images/tagColor.png HTT127.0.0.1 - -127.0.0.1 - - [31/Jul/2026 14:00:18] "GET /api/mp/models/graph?operationName=GetSnapshots&variables=%7B%22modelId%22%3A%22PVJeCSYtgU4%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%226cc214b557ce3a722b973e119b784c245cae184fc099db44c17ccf3704aeeea2%22%7D%7D HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 14:00:18] "GET /locale/strings.json HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 14:00:19] "GET //webgl-vendors/three/0.184.0/libs/basis/basis_transcoder.wasm HTTP/1.1" 200 -
+] "GET /api/v1/plugins?manifest=true HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 14:00:18] "GET /api/v1/jsonstore/model/plugins/PVJeCSYtgU4 HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 14:00:19] "GET /api/mp/models/graph?operationName=GetRoomBounds&variables=%7B%22modelId%22%3A%22PVJeCSYtgU4%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22bfb7c34735bc577d52b18e41e463546871bded2ba339e61c66ae3a03c013e9b9%22%7D%7D HTTP/1.1" 200 -
+Jul/2026 14:00:18] "GET /api/v1/player/models/PVJeCSYtgU4/thumb?width=1272&dpr=1.5&disable=upscale HTTP/1.1" 404 -
+127.0.0.1 - - [31/Jul/2026 14:00:19] "GET //webgl-vendors/three/0.184.0/libs/draco/gltf/draco_decoder.wasm HTTP/1.1" 200 -
+127.0.0.1 - - [31/Jul/2026 14:00:19] "GET /api/v1/jsonstore/model/trims/PVJeCSYtgU4 HTTP/1.1" 200 -
