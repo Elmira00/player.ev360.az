@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<title>{% block title %}player.ev360.az{% endblock %}</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #262b35;
+    --text: #e7e9ee;
+    --muted: #9aa2b1;
+    --accent: #4f8cff;
+    --ok: #3ecf8e;
+    --fail: #ff6161;
+    --warn: #ffb454;
+    --hover-bg: rgba(255, 255, 255, 0.06);
+  }
+  
+  * { box-sizing: border-box; }
+  
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  /* --- MODERN NAVIGATION BAR --- */
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 32px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-left, .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  nav .brand {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 16px;
+    letter-spacing: -0.02em;
+    padding-right: 16px;
+    border-right: 1px solid var(--border);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 4px;
+  }
+
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  nav a.active, nav a:hover {
+    color: var(--text);
+    background: var(--hover-bg);
+  }
+
+  .user-email {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .logout-btn {
+    margin: 0;
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .logout-btn:hover {
+    color: var(--text);
+    border-color: var(--muted);
+    background: var(--hover-bg);
+  }
+
+  /* Expanded max-width from 900px to 1100px so full tables sit nicely */
+  main { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 28px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  p.sub { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+  
+  input[type=url], input[type=text] { width: 100%; padding: 12px 14px; background: #0f1115; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; }
+  
+  button.primary-btn { margin-top: 14px; padding: 11px 20px; background: var(--accent); border: none; border-radius: 8px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+  button.primary-btn:hover { opacity: 0.9; }
+  
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-pending { background: #332b12; color: var(--warn); }
+  .badge-downloading { background: #122a33; color: var(--accent); }
+  .badge-ready { background: #12331f; color: var(--ok); }
+  .badge-failed { background: #331414; color: var(--fail); }
+  
+  code { background: #0f1115; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); }
+  
+  .msg { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; }
+  .msg-success { background: #12331f; color: var(--ok); }
+  .msg-info { background: #122a33; color: var(--accent); }
+  .msg-error { background: #331414; color: var(--fail); }
+  .empty { color: var(--muted); font-size: 14px; padding: 24px 0; }
+
+  .copy-btn { margin-left: 0px; padding: 4px 10px; background: #1c2128; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-size: 11px; cursor: pointer; transition: 0.2s; }
+  .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+
+  .btn { display: inline-block; padding: 6px 14px; border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: background 0.15s ease; }
+  .btn-danger { background: #b91c1c; color: #fff; }
+  .btn-danger:hover { background: #991b1b; }
+
+  .tour-table { width: 100%; border-collapse: collapse; }
+  .tour-table th, .tour-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="brand">player.ev360.az</span>
+    <div class="nav-links">
+      <a href="{% url 'submit' %}" class="{% if request.resolver_match.url_name == 'submit' %}active{% endif %}">Submit</a>
+      <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+    </div>
+  </div>
+
+  <div class="nav-right">
+    {% if user.is_authenticated %}
+      <a href="{% url 'profile' %}" class="user-email">{{ user.email }}</a>
+      <form method="post" action="{% url 'logout' %}" style="display:inline; margin: 0; padding: 0;">
+        {% csrf_token %}
+        <button type="submit" class="logout-btn">Log out</button>
+      </form>
+    {% else %}
+      <a href="{% url 'login' %}">Log in</a>
+    {% endif %}
+  </div>
+</nav>
+
+<main>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="msg msg-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+  
+  {% block content %}  {% endblock %}
+</main>
+</body>
+</html>

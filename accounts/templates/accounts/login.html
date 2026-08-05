@@ -1,0 +1,125 @@
+{% extends "tours/base.html" %}
+
+{% block content %}
+<style>
+    /* Ümumi fon və mərkəzləşdirmə */
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Əsas login qutusu */
+    .auth-box {
+        background: #ffffff;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .auth-box h2 {
+        text-align: center;
+        margin-bottom: 25px;
+        color: #2c3e50;
+        font-size: 26px;
+        font-weight: 600;
+    }
+
+    /* Xəta mesajlarının dizaynı */
+    .auth-box p.error {
+        background-color: #fdf2f2;
+        color: #e74c3c;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        margin-bottom: 20px;
+        text-align: center;
+        border: 1px solid #fadbd8;
+    }
+
+    /* form.as_p üçün xüsusi CSS */
+    .auth-box form p {
+        margin-bottom: 20px;
+    }
+
+    .auth-box form label {
+        display: block;
+        margin-bottom: 8px;
+        color: #34495e;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .auth-box form input[type="text"],
+    .auth-box form input[type="password"],
+    .auth-box form input[type="email"] {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #dcdfe6;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-size: 15px;
+        color: #333;
+        transition: all 0.3s ease;
+    }
+
+    .auth-box form input:focus {
+        border-color: #3498db;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+    }
+
+    /* Django-nun əlavə etdiyi helptext */
+    .auth-box form .helptext {
+        font-size: 12px;
+        color: #7f8c8d;
+        display: block;
+        margin-top: 5px;
+    }
+
+    /* Düymə dizaynı */
+    .auth-box button {
+        width: 100%;
+        padding: 14px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.1s ease;
+        margin-top: 10px;
+    }
+
+    .auth-box button:hover {
+        background-color: #2980b9;
+    }
+
+    .auth-box button:active {
+        transform: scale(0.98);
+    }
+</style>
+
+<div class="login-container">
+    <div class="auth-box">
+        <h2>Daxil ol</h2>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <p class="error">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Hesaba daxil ol</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
