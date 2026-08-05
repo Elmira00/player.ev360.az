@@ -191,3 +191,21 @@ C:\Users\Elmira\Desktop\matterport-dl\matterport-dl.py:42: DeprecationWarning: '
 127.0.0.1 - - [04/Aug/2026 20:51:37] "GET /models/f3702b3bbfda4b21b48fc1f6befd3e25/assets/~/tiles/3e040b22fc3a4cad9d89cdccb1f661a2/512_face4_0_0.jpg?t=2-e20348e93d939563fe225694bc94cd25a7f8a04a-1785967723-0&k=models%2Ff3702b3bbfda4b21b48fc1f6befd3e25%2Fassets&imgopt=1 HTTP/1.1" 404 -
 127.0.0.1 - - [04/Aug/2026 20:51:41] "POST /api/v1/event?ev=dwell_events HTTP/1.1" 200 -
 127.0.0.1 - - [04/Aug/2026 20:51:51] "POST /api/v1/event?ev=activity_ping HTTP/1.1" 200 -
+127.0.0.1 - - [04/Aug/2026 21:03:13] code 404, message File not found
+127.0.0.1 - - [04/Aug/2026 21:03:13] "GET /models/f3702b3bbfda4b21b48fc1f6befd3e25/assets/~/tiles/3e040b22fc3a4cad9d89cdccb1f661a2/512_face5_0_0.jpg?t=2-e20348e93d939563fe225694bc94cd25a7f8a04a-1785967723-0&k=models%2Ff3702b3bbfda4b21b48fc1f6befd3e25%2Fassets&imgopt=1 HTTP/1.1" 404 -
+127.0.0.1 - - [04/Aug/2026 21:03:13] code 404, message File not found
+127.0.0.1 - - [04/Aug/2026 21:03:13] "GET /models/f3702b3bbfda4b21b48fc1f6befd3e25/assets/~/tiles/a6b2b26196cb4fb58dbf3bbaef8a5ebf/512_face1_0_0.jpg?t=2-e20348e93d939563fe225694bc94cd25a7f8a04a-1785967723-0&k=models%2Ff3702b3bbfda4b21b48fc1f6befd3e25%2Fassets&imgopt=1 HTTP/1.1" 404 -
+127.0.0.1 - - [04/Aug/2026 21:03:13] code 404, message File not found
+127.0.0.1 - - [04/Aug/2026 21:03:13] "GET /models/f3702b3bbfda4b21b48fc1f6befd3e25/assets/~/tiles/a6b2b26196cb4fb58dbf3bbaef8a5ebf/512_face0_0_0.jpg?t=2-e20348e93d939563fe225694bc94cd25a7f8a04a-1785967723-0&k=models%2Ff3702b3bbfda4b21b48fc1f6befd3e25%2Fassets&imgopt=1 HTTP/1.1" 404 -
+127.0.0.1 - - [04/Aug/2026 21:03:14] "POST /api/v1/event?ev=performance HTTP/1.1" 200 -
+127.0.0.1 - - [04/Aug/2026 21:07:08] code 404, message File not found
+127.0.0.1 - - [04/Aug/2026 21:07:08] "GET /models/f3702b3bbfda4b21b48fc1f6befd3e25/assets/~/tiles/a6b2b26196cb4fb58dbf3bbaef8a5ebf/512_face4_0_0.jpg?t=2-e20348e93d939563fe225694bc94cd25a7f8a04a-1785967723-0&k=models%2Ff3702b3bbfda4b21b48fc1f6befd3e25%2Fassets&imgopt=1 HTTP/1.1" 404 -
+127.0.0.1 - - [04/Aug/2026 21:07:08] code 404, message File not found
+127.0.0.1 - - [04/Aug/2026 21:07:08] "GET /models/f3702b3bbfda4b21b48fc1f6befd3e25/assets/~/tiles/a6b2b26196cb4fb58dbf3bbaef8a5ebf/512_face2_0_0.jpg?t=2-e20348e93d939563fe225694bc94cd25a7f8a04a-1785967723-0&k=models%2Ff3702b3bbfda4b21b48fc1f6befd3e25%2Fassets&imgopt=1 HTTP/1.1" 404 -
+127.0.0.1 - - [04/Aug/2026 21:07:08] code 404, message File not found
+127.0.0.1 - - [04/Aug/2026 21:07:08] "GET /models/f3702b3bbfda4b21b48fc1f6befd3e25/assets/~/tiles/a6b2b26196cb4fb58dbf3bbaef8a5ebf/512_face3_0_0.jpg?t=2-e20348e93d939563fe225694bc94cd25a7f8a04a-1785967723-0&k=models%2Ff3702b3bbfda4b21b48fc1f6befd3e25%2Fassets&imgopt=1 HTTP/1.1" 404 -
+127.0.0.1 - - [04/Aug/2026 21:07:08] "POST /api/v1/event?ev=resource_timing HTTP/1.1" 200 -
+127.0.0.1 - - [04/Aug/2026 21:07:25] code 404, message File not found
+127.0.0.1 - - [04/Aug/2026 21:07:25] "GET /models/f3702b3bbfda4b21b48fc1f6befd3e25/assets/~/tiles/a6b2b26196cb4fb58dbf3bbaef8a5ebf/512_face5_0_0.jpg?t=2-e20348e93d939563fe225694bc94cd25a7f8a04a-1785967723-0&k=models%2Ff3702b3bbfda4b21b48fc1f6befd3e25%2Fassets&imgopt=1 HTTP/1.1" 404 -
+127.0.0.1 - - [04/Aug/2026 21:07:25] "POST /api/v1/event?ev=resource_timing HTTP/1.1" 200 -
+127.0.0.1 - - [04/Aug/2026 22:04:33] "POST /api/v1/event?ev=dwell_events HTTP/1.1" 200 -

@@ -1,8 +1,8 @@
 import os
 import shutil
 import subprocess
-from time import time
 import zipfile
+
 import tempfile
 from celery import shared_task
 from django.conf import settings
