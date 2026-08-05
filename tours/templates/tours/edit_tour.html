@@ -1,0 +1,262 @@
+{% extends "tours/base.html" %}
+
+{% block title %}Edit {{ tour.name|default:tour.matterport_id }} — player.ev360.az{% endblock %}
+
+{% block content %}
+<style>
+  /* Page Layout */
+  .edit-container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .page-header {
+    margin-bottom: 2rem;
+  }
+  .page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: inherit;
+  }
+  .page-desc {
+    color: var(--muted, #9ca3af);
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  /* Card Styling (Dark Mode Optimized) */
+  .card {
+    background: var(--bg-card, rgba(255, 255, 255, 0.03)); 
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(10px);
+  }
+  .card-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    color: inherit;
+  }
+
+  /* Form Elements */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  .form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: inherit;
+  }
+  .form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: #ffffff; /* Ensure text is visible in inputs */
+    background: var(--bg-input, rgba(0, 0, 0, 0.25));
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+  }
+  .form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    background: rgba(0, 0, 0, 0.4);
+  }
+  .help-text {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted, #9ca3af);
+    margin-top: 0.5rem;
+    line-height: 1.4;
+  }
+
+  /* Buttons */
+  .btn-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 2rem;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+  }
+  .btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  .btn-primary:hover {
+    background: #1d4ed8;
+  }
+  .btn-secondary {
+    background: transparent;
+    color: #ffffff;
+    border-color: var(--border, rgba(255, 255, 255, 0.2));
+  }
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--muted, #9ca3af);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  .back-link:hover {
+    color: #ffffff;
+  }
+
+  /* Read-Only Details Grid */
+  .details-grid {
+    display: grid;
+    grid-template-columns: minmax(120px, max-content) 1fr;
+    gap: 1.25rem 2rem;
+    align-items: center;
+  }
+  .detail-key {
+    font-size: 0.875rem;
+    color: var(--muted, #9ca3af);
+    font-weight: 500;
+  }
+  .detail-value {
+    font-size: 0.95rem;
+    font-weight: 500;
+    word-break: break-all;
+    color: inherit;
+  }
+  .detail-value code {
+    background: var(--bg-input, rgba(255, 255, 255, 0.1));
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.85em;
+    color: #f87171;
+  }
+  .detail-value a {
+    color: #60a5fa;
+    text-decoration: none;
+  }
+  .detail-value a:hover {
+    text-decoration: underline;
+  }
+  .text-fail {
+    color: var(--fail, #ef4444);
+  }
+</style>
+
+<div class="edit-container">
+  <!-- Header -->
+  <header class="page-header">
+    <h1 class="page-title">Edit Tour Configuration</h1>
+    <p class="page-desc">Update properties for <strong>{{ tour.name|default:tour.matterport_id }}</strong>.</p>
+  </header>
+
+  <!-- Interactive Form Card -->
+  <div class="card">
+    <h2 class="card-header">General Settings</h2>
+    
+    <form method="post" id="edit-form">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label class="form-label">Tour Name</label>
+        <input type="text" name="name" value="{{ tour.name }}" placeholder="e.g. Downtown Highrise" class="form-control">
+      </div>
+
+      {% if latest.source_type == "url" %}
+      <div class="form-group">
+        <label class="form-label">Source URL</label>
+        <input type="text" name="source_url" value="{{ latest.source_url }}" class="form-control">
+        <span class="help-text">
+          <svg style="width:14px;height:14px;vertical-align:middle;margin-right:2px;fill:currentColor;" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+          Warning: Changing this to a different Matterport model will completely delete the currently downloaded files and trigger a fresh download.
+        </span>
+      </div>
+      {% endif %}
+    </form>
+
+    <!-- Action Buttons -->
+    <div class="btn-group">
+      <button type="submit" form="edit-form" name="action" value="save" class="btn btn-primary">
+        <svg style="width:16px;height:16px;fill:currentColor;" viewBox="0 0 20 20"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414L9 11.586V4z"></path></svg>
+        Save Changes
+      </button>
+
+      {% if latest.source_type == "url" %}
+      <form method="post" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" name="action" value="retry" class="btn btn-secondary">
+          <svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          Force Retry Download
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Read-Only Details Card -->
+  <div class="card">
+    <h2 class="card-header">Tour Metadata</h2>
+    <div class="details-grid">
+      
+      <div class="detail-key">Matterport ID</div>
+      <div class="detail-value"><code>{{ tour.matterport_id }}</code></div>
+
+      <div class="detail-key">Current Status</div>
+      <div class="detail-value"><span class="badge badge-{{ latest.status }}">{{ latest.get_status_display }}</span></div>
+
+      {% if latest.status == "failed" and latest.error_message %}
+      <div class="detail-key">Error Log</div>
+      <div class="detail-value text-fail">{{ latest.error_message|truncatechars:400 }}</div>
+      {% endif %}
+
+      <div class="detail-key">Source Type</div>
+      <div class="detail-value">{{ latest.get_source_type_display }}</div>
+
+      <div class="detail-key">Created Date</div>
+      <div class="detail-value">{{ tour.created_at|date:"M d, Y H:i" }}</div>
+
+      <div class="detail-key">Last Updated</div>
+      <div class="detail-value">{{ latest.updated_at|date:"M d, Y H:i" }}</div>
+
+      {% if latest.status == "ready" %}
+      <div class="detail-key">Local Link</div>
+      <div class="detail-value">
+        <a href="{{ tour.local_url }}" target="_blank"><code>{{ tour.local_url }}</code></a>
+      </div>
+      {% endif %}
+      
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <a href="{% url 'dashboard' %}" class="back-link">
+    <svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+    Back to Dashboard
+  </a>
+
+</div>
+{% endblock %}
