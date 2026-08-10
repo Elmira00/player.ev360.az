@@ -32,17 +32,9 @@ def _is_port_alive(port: int) -> bool:
 
 
 def ensure_server_running(matterport_id: str) -> int:
-    """Starts matterport-dl.py's own local HTTP server for this tour if it
-    isn't already running, and returns the port it's listening on.
-
-    Uses a Redis-backed registry (shared across all gunicorn workers and
-    Celery, unlike an in-process dict) plus a Redis lock, so concurrent
-    requests from different workers never spawn duplicate subprocess
-    servers for the same tour."""
     registry_key = f"{REGISTRY_KEY_PREFIX}{matterport_id}"
     lock_key = f"{registry_key}:lock"
 
-    # Fast path: already registered and actually alive.
     existing = _redis_client.get(registry_key)
     if existing:
         data = json.loads(existing)
@@ -51,26 +43,36 @@ def ensure_server_running(matterport_id: str) -> int:
         else:
             _redis_client.delete(registry_key)
 
-    # Slow path: acquire a short-lived Redis lock so only ONE process
-    # spawns the subprocess for this matterport_id, even under concurrency.
     with _lock:
-        got_lock = _redis_client.set(lock_key, "1", nx=True, ex=30)
-        if not got_lock:
-            # Someone else is spawning it right now — wait briefly and
-            # check the registry again instead of racing to spawn our own.
+        # Block until we get the lock — do NOT fall through and spawn a
+        # duplicate if someone else is already spawning. A previous
+        # version fell through after a timeout, which could create an
+        # orphaned second subprocess whose PID then vanishes from Redis
+        # once the first spawn overwrites the registry key, leaving it
+        # unkillable by stop_server.
+        got_lock = False
+        for _ in range(40):  # up to ~20s total, matching old wait budget
+            got_lock = _redis_client.set(lock_key, "1", nx=True, ex=30)
+            if got_lock:
+                break
+            existing = _redis_client.get(registry_key)
+            if existing:
+                data = json.loads(existing)
+                if _is_port_alive(data["port"]):
+                    return data["port"]
             import time
-            for _ in range(20):
-                time.sleep(0.5)
-                existing = _redis_client.get(registry_key)
-                if existing:
-                    data = json.loads(existing)
-                    if _is_port_alive(data["port"]):
-                        return data["port"]
-            # Fall through and try to spawn ourselves if we timed out waiting.
+            time.sleep(0.5)
+
+        if not got_lock:
+            # Still couldn't get the lock after waiting — something is
+            # stuck (e.g. a crashed holder left a lock with no server).
+            # Safer to raise than silently spawn a duplicate.
+            raise RuntimeError(
+                f"Timed out waiting for server lock for {matterport_id}; "
+                f"a stuck lock or slow spawn may be blocking it."
+            )
 
         try:
-            # Double-check after acquiring the lock — another process may
-            # have just finished spawning it while we were waiting.
             existing = _redis_client.get(registry_key)
             if existing:
                 data = json.loads(existing)
@@ -99,7 +101,7 @@ def ensure_server_running(matterport_id: str) -> int:
             _redis_client.set(
                 registry_key,
                 json.dumps({"port": port, "pid": process.pid}),
-                ex=3600,  # expire after 1hr of inactivity as a safety net
+                ex=3600,
             )
             return port
         finally:
