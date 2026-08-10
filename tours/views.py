@@ -2,7 +2,7 @@ import mimetypes
 import os
 import re
 import shutil
-import time
+from time import time
 import urllib.error
 import urllib.request
 import uuid

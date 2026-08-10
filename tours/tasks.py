@@ -1,8 +1,8 @@
+from time import time
 import os
 import shutil
 import subprocess
 import zipfile
-
 import tempfile
 from celery import shared_task
 from django.conf import settings
@@ -108,8 +108,9 @@ def download_matterport_tour(self, upload_id: int):
                 f"matterport-dl.py exited without error but expected output dir "
                 f"was not found: {expected_dir}"
             )
-        
+
         rewrite_cdn_urls(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
+        rewrite_graph_json_cdn_urls(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
         strip_dangling_defurnish_views(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
 
         upload.local_path = expected_dir
@@ -125,6 +126,8 @@ def download_matterport_tour(self, upload_id: int):
                 f"but the core tour files exist at {expected_dir} — treating as READY."
             )
             rewrite_cdn_urls(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
+            rewrite_graph_json_cdn_urls(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
+            strip_dangling_defurnish_views(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
             upload.local_path = expected_dir
             upload.status = TourUpload.Status.READY
             upload.error_message = (
@@ -141,15 +144,6 @@ def download_matterport_tour(self, upload_id: int):
     except Exception as e:
         upload.status = TourUpload.Status.FAILED
         upload.error_message = str(e)
-    except subprocess.CalledProcessError as e:
-        if _tour_actually_downloaded(expected_dir):
-            print(
-                f"[download_matterport_tour] matterport-dl.py exited with an error, "
-                f"but the core tour files exist at {expected_dir} — treating as READY."
-            )
-            rewrite_cdn_urls(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
-            strip_dangling_defurnish_views(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
-            upload.local_path = expected_dir
 
     upload.save()
 
@@ -206,6 +200,7 @@ def process_zip_upload(self, upload_id: int, zip_path: str):
         shutil.move(source_folder, target_dir)
 
         rewrite_cdn_urls(matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
+        rewrite_graph_json_cdn_urls(matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
         strip_dangling_defurnish_views(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
 
         upload.local_path = target_dir
@@ -287,3 +282,43 @@ def strip_dangling_defurnish_views(matterport_id: str, download_root: str) -> No
                     json.dump(data, f, indent=2)
         except (OSError, json.JSONDecodeError) as e:
             print(f"[strip_dangling_defurnish_views] Could not process {path}: {e}")
+
+
+
+
+import glob
+def rewrite_graph_json_cdn_urls(matterport_id: str, download_root: str) -> None:
+    """...same docstring as before..."""
+    tour_dir = os.path.join(download_root, matterport_id)
+    models_dir = os.path.join(tour_dir, "api", "mp", "models")
+    if not os.path.isdir(models_dir):
+        return
+
+    # https://cdn-2.matterport.com/models/<hash>/assets/<rest>?<query>
+    # -> /tour/<matterport_id>/models/<hash>/assets/<rest>
+    # matterport-dl mirrors the CDN's full path locally (including
+    # models/<hash>/assets/...), so we only swap the domain+scheme for
+    # our local proxy prefix and drop the query string — the rest of
+    # the path must stay untouched to match what's actually on disk.
+    cdn_pattern = re.compile(
+        r'https://cdn-2\.matterport\.com/(models/[0-9a-fA-F]+/assets/[^"?]*)(\?[^"]*)?'
+    )
+
+    for path in glob.glob(os.path.join(models_dir, "graph_*.json")):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            new_content, count = cdn_pattern.subn(
+                rf"/tour/{matterport_id}/\1", content
+            )
+
+            if count:
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(new_content)
+                print(
+                    f"[rewrite_graph_json_cdn_urls] Patched {count} CDN "
+                    f"asset URL(s) in: {path}"
+                )
+        except OSError as e:
+            print(f"[rewrite_graph_json_cdn_urls] Could not patch {path}: {e}")
