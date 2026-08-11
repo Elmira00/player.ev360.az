@@ -2,7 +2,7 @@ import mimetypes
 import os
 import re
 import shutil
-from time import time
+import time
 import urllib.error
 import urllib.request
 import uuid
@@ -256,10 +256,37 @@ def tour_proxy_view(request, matterport_id, subpath=""):
         return HttpResponse('{"data": "empty"}', content_type="application/json")
 
     if subpath == "api/mp/models/graph" and "GetModelAssets" in query:
-        return HttpResponse(
-            '{"data": {"model": {"assets": {"__typename": "AssetsGroup"}}}}',
-            content_type="application/json",
-        )
+        cdn_url = f"https://my.matterport.com/api/mp/models/graph?{query}"
+        try:
+            cdn_req = urllib.request.Request(cdn_url, method="GET")
+            with urllib.request.urlopen(cdn_req, timeout=10) as cdn_resp:
+                return HttpResponse(
+                    cdn_resp.read(),
+                    status=cdn_resp.status,
+                    content_type="application/json",
+                )
+        except Exception as e:
+            print(f"[tour_proxy_view] GetModelAssets live fetch failed, falling back to empty stub: {e}")
+            return HttpResponse(
+                '{"data": {"model": {"assets": {"__typename": "AssetsGroup"}}}}',
+                content_type="application/json",
+            )
+    if subpath == "api/mp/models/graph" and "GetSweeps" in query:
+        cdn_url = f"https://my.matterport.com/api/mp/models/graph?{query}"
+        try:
+            cdn_req = urllib.request.Request(cdn_url, method="GET")
+            with urllib.request.urlopen(cdn_req, timeout=10) as cdn_resp:
+                return HttpResponse(
+                    cdn_resp.read(),
+                    status=cdn_resp.status,
+                    content_type="application/json",
+                )
+        except Exception as e:
+            print(f"[tour_proxy_view] GetSweeps live fetch failed, falling back to empty stub: {e}")
+            return HttpResponse(
+                '{"data": {"model": {"sweeps": []}}}',
+                content_type="application/json",
+            )
 
     # showcase.js sometimes requests a bare plugin version (e.g.
     # showcase-sdk/plugins/published/compass/1.0.14/plugin.json) while

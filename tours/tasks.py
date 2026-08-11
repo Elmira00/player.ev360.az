@@ -1,4 +1,4 @@
-from time import time
+import time
 import os
 import shutil
 import subprocess
