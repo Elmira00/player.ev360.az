@@ -5,6 +5,7 @@ urlpatterns = [
     path("", views.submit_view, name="submit"),
     path("dashboard/", views.dashboard_view, name="dashboard"),
     path("submit/zip/", views.submit_zip_view, name="submit_zip"),
+    path("submit/zip/chunk/", views.upload_chunk_view, name="upload_chunk"),
     path("dashboard/status.json", views.tours_status_json, name="tours_status_json"),
     path("tour/<int:tour_id>/delete/", views.delete_tour_view, name="delete_tour"),
     path("tour/<int:tour_id>/edit/", views.edit_tour_view, name="edit_tour"),

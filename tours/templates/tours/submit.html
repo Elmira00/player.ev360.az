@@ -95,13 +95,98 @@
 
   <div class="panel">
     <h1>Or upload a tour ZIP</h1>
-    <p class="sub">Upload a ZIP of an already-downloaded matterport-dl folder (e.g. from your local machine). The folder name inside the ZIP must be the Matterport ID.</p>
-    <form method="post" action="{% url 'submit_zip' %}" enctype="multipart/form-data" class="form-group">
-      {% csrf_token %}
-      <input type="file" name="zip_file" class="form-input" accept=".zip" style="padding-left: 0; border: none; background: transparent;" required>
-      <button type="submit" class="form-btn">Upload ZIP</button>
-    </form>
+    <p class="sub">Upload a ZIP of an already-downloaded matterport-dl folder (e.g. from your local machine). The folder name inside the ZIP must be the Matterport ID. Large files are uploaded in chunks automatically.</p>
+    <div class="form-group" id="zip-upload-group">
+      <input type="file" id="zip-chunk-input" class="form-input" accept=".zip" style="padding-left: 0; border: none; background: transparent;">
+      <button type="button" id="zip-chunk-btn" class="form-btn">Upload ZIP</button>
+    </div>
+    <div id="zip-progress-wrap" style="display:none; margin-top:16px;">
+      <div style="background:#111827; border-radius:8px; overflow:hidden; height:10px;">
+        <div id="zip-progress-bar" style="background:#2563eb; height:100%; width:0%; transition:width 0.2s ease;"></div>
+      </div>
+      <p id="zip-progress-text" style="color:#9ca3af; font-size:0.85rem; margin-top:8px;"></p>
+    </div>
   </div>
+
+  <script>
+    (function () {
+      const CHUNK_SIZE = 40 * 1024 * 1024; // 40MB per chunk, safely under Cloudflare's 100MB cap
+      const fileInput = document.getElementById("zip-chunk-input");
+      const uploadBtn = document.getElementById("zip-chunk-btn");
+      const progressWrap = document.getElementById("zip-progress-wrap");
+      const progressBar = document.getElementById("zip-progress-bar");
+      const progressText = document.getElementById("zip-progress-text");
+
+      function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? match[2] : null;
+      }
+
+      async function uploadChunk(uploadKey, chunkIndex, totalChunks, blob, filename) {
+        const formData = new FormData();
+        formData.append("upload_key", uploadKey);
+        formData.append("chunk_index", chunkIndex);
+        formData.append("total_chunks", totalChunks);
+        formData.append("filename", filename);
+        formData.append("chunk", blob);
+
+        const resp = await fetch("{% url 'upload_chunk' %}", {
+          method: "POST",
+          headers: { "X-CSRFToken": getCookie("csrftoken") },
+          body: formData,
+        });
+
+        if (!resp.ok) {
+          const text = await resp.text();
+          throw new Error(`Chunk ${chunkIndex + 1}/${totalChunks} failed: ${resp.status} ${text}`);
+        }
+        return resp.json();
+      }
+
+      uploadBtn.addEventListener("click", async function () {
+        const file = fileInput.files[0];
+        if (!file) {
+          alert("Please choose a .zip file first.");
+          return;
+        }
+        if (!file.name.toLowerCase().endsWith(".zip")) {
+          alert("Please choose a .zip file.");
+          return;
+        }
+
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+        const uploadKey = crypto.randomUUID().replace(/-/g, "");
+
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = "Uploading...";
+        progressWrap.style.display = "block";
+
+        try {
+          for (let i = 0; i < totalChunks; i++) {
+            const start = i * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const blob = file.slice(start, end);
+
+            await uploadChunk(uploadKey, i, totalChunks, blob, file.name);
+
+            const percent = Math.round(((i + 1) / totalChunks) * 100);
+            progressBar.style.width = percent + "%";
+            progressText.textContent = `Uploading chunk ${i + 1} of ${totalChunks} (${percent}%)`;
+          }
+
+          progressText.textContent = "Upload complete — processing in the background.";
+          setTimeout(function () {
+            window.location.href = "{% url 'dashboard' %}";
+          }, 1200);
+        } catch (err) {
+          console.error(err);
+          progressText.textContent = "Upload failed: " + err.message;
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = "Upload ZIP";
+        }
+      });
+    })();
+  </script>
 </div>
 
 {% endblock %}

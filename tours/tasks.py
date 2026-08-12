@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import zipfile
 import tempfile
+import glob
 from celery import shared_task
 from django.conf import settings
 
@@ -22,20 +23,10 @@ def _safe_rmtree(path, attempts=5, delay=1.0):
             time.sleep(delay)
     return False
 
-
-
-
-
 from .models import Tour, TourUpload
 from .serving import stop_server
 
-
 def rewrite_cdn_urls(matterport_id: str, download_root: str) -> None:
-    """matterport-dl.py doesn't rewrite static.matterport.com/webgl-vendors/
-    URLs to local paths, so the browser makes a direct cross-origin request
-    that gets blocked by CORS on our production domain. This patches the
-    downloaded showcase.js / showcase.modified.js in place so those assets
-    load through our own /webgl-vendors/ proxy instead."""
     tour_dir = os.path.join(download_root, matterport_id)
     targets = [
         os.path.join(tour_dir, "js", "showcase.js"),
@@ -61,10 +52,30 @@ def rewrite_cdn_urls(matterport_id: str, download_root: str) -> None:
         except OSError as e:
             print(f"[rewrite_cdn_urls] Could not patch {path}: {e}")
 
-
 def _tour_actually_downloaded(expected_dir: str) -> bool:
-    return os.path.isfile(os.path.join(expected_dir, "index.html"))
+    if not os.path.isfile(os.path.join(expected_dir, "index.html")):
+        return False
+    mesh_tiles_dirs = glob.glob(
+        os.path.join(expected_dir, "models", "*", "assets", "mesh_tiles")
+    )
+    if not mesh_tiles_dirs:
+        return False
+    mesh_tiles_ok = False
+    for d in mesh_tiles_dirs:
+        if not os.path.isdir(d):
+            continue
+        for _root, _dirs, files in os.walk(d):
+            if files:
+                mesh_tiles_ok = True
+                break
+        if mesh_tiles_ok:
+            break
+    if not mesh_tiles_ok:
+        return False
 
+
+
+    return True
 
 def fetch_tour_name(matterport_id, download_root):
     import json
@@ -80,7 +91,6 @@ def fetch_tour_name(matterport_id, download_root):
         print(f"[fetch_tour_name] couldn't read name for {matterport_id}: {e}")
         return ""
 
-
 @shared_task(bind=True)
 def download_matterport_tour(self, upload_id: int):
     upload = TourUpload.objects.get(id=upload_id)
@@ -95,10 +105,15 @@ def download_matterport_tour(self, upload_id: int):
 
     try:
         subprocess.run(
-            [settings.MATTERPORT_DL_PYTHON, "matterport-dl.py", upload.source_url],
+            [
+                settings.MATTERPORT_DL_PYTHON, 
+                "matterport-dl.py", 
+                "--proxy", "socks5://127.0.0.1:9050", "--no-generate-tile-mesh-crops",
+                upload.source_url
+            ],
             cwd=settings.MATTERPORT_DL_DIR,
             check=True,
-            timeout=1800,
+            timeout=7200,
             capture_output=True,
             text=True,
         )
@@ -107,6 +122,12 @@ def download_matterport_tour(self, upload_id: int):
             raise RuntimeError(
                 f"matterport-dl.py exited without error but expected output dir "
                 f"was not found: {expected_dir}"
+            )
+
+        if not _tour_actually_downloaded(expected_dir):
+            raise RuntimeError(
+                f"Download incomplete (mesh_tiles/sweep tiles missing "
+                f"or real 429s found)"
             )
 
         rewrite_cdn_urls(tour.matterport_id, settings.MATTERPORT_DOWNLOADS_DIR)
@@ -147,13 +168,8 @@ def download_matterport_tour(self, upload_id: int):
 
     upload.save()
 
-
 @shared_task(bind=True)
 def process_zip_upload(self, upload_id: int, zip_path: str):
-    """Unzips an uploaded tour ZIP, finds the matterport_id from the top-level
-    folder name inside it, links this upload to the right Tour (creating it
-    if it doesn't exist yet), moves the folder into matterport-dl's downloads
-    dir, and marks the upload READY."""
     upload = TourUpload.objects.get(id=upload_id)
     upload.status = TourUpload.Status.DOWNLOADING
     upload.celery_task_id = self.request.id or ""
@@ -174,18 +190,15 @@ def process_zip_upload(self, upload_id: int, zip_path: str):
 
         if len(entries) != 1:
             raise ValueError(
-                f"Expected exactly one top-level folder in the ZIP (the "
-                f"matterport_id folder), found {len(entries)}: {entries}"
+                f"Expected exactly one top-level folder in the ZIP, found {len(entries)}: {entries}"
             )
 
         matterport_id = entries[0]
         source_folder = os.path.join(extract_dir, matterport_id)
 
         if not os.path.isfile(os.path.join(source_folder, "index.html")):
-            raise ValueError(
-                f"'{matterport_id}' folder doesn't look like a valid tour "
-                f"(no index.html found inside it)."
-            )
+            raise ValueError(f"'{matterport_id}' folder doesn't look like a valid tour.")
+            
         tour, _ = Tour.objects.get_or_create(matterport_id=matterport_id)
         upload.tour = tour
         upload.save(update_fields=["tour"])
@@ -221,23 +234,10 @@ def process_zip_upload(self, upload_id: int, zip_path: str):
 
     upload.save()
 
-
-
 import json
 import re
 
 def strip_dangling_defurnish_views(matterport_id: str, download_root: str) -> None:
-    """Matterport tours can reference a secondary 'defurnished view' model
-    (graph_GetModelDetails.json -> data.model.defurnishViews[].model.id).
-    matterport-dl.py sometimes fails to download that secondary model's
-    assets (see download_matterport_tour's 429-on-secondary-asset handling)
-    but still leaves the reference in the JSON. The *live* Matterport
-    player tolerates this by falling back to Matterport's CDN; our fully
-    static/local ZIP-served copy has no such fallback, and showcase.js
-    silently stalls during init trying to resolve it — no console error,
-    no failed network request, the tour just never leaves LOADING.
-    Strip any defurnishViews entry whose model id has no corresponding
-    asset folder on disk."""
     tour_dir = os.path.join(download_root, matterport_id)
     targets = [
         os.path.join(tour_dir, "api", "mp", "models", "graph_GetModelDetails.json"),
@@ -259,8 +259,6 @@ def strip_dangling_defurnish_views(matterport_id: str, download_root: str) -> No
             kept = []
             for view in defurnish_views:
                 view_id = view.get("model", {}).get("id", "")
-                # Any file anywhere under tour_dir mentioning this id means
-                # its assets were actually downloaded.
                 found = False
                 if view_id:
                     for root, _dirs, files in os.walk(tour_dir):
@@ -270,11 +268,7 @@ def strip_dangling_defurnish_views(matterport_id: str, download_root: str) -> No
                 if found:
                     kept.append(view)
                 else:
-                    print(
-                        f"[strip_dangling_defurnish_views] Removing dangling "
-                        f"defurnishViews entry {view_id} from {path} "
-                        f"(no local assets found)"
-                    )
+                    print(f"[strip_dangling_defurnish_views] Removing dangling defurnishViews entry {view_id}")
 
             if len(kept) != len(defurnish_views):
                 model["defurnishViews"] = kept
@@ -283,23 +277,13 @@ def strip_dangling_defurnish_views(matterport_id: str, download_root: str) -> No
         except (OSError, json.JSONDecodeError) as e:
             print(f"[strip_dangling_defurnish_views] Could not process {path}: {e}")
 
-
-
-
 import glob
 def rewrite_graph_json_cdn_urls(matterport_id: str, download_root: str) -> None:
-    """...same docstring as before..."""
     tour_dir = os.path.join(download_root, matterport_id)
     models_dir = os.path.join(tour_dir, "api", "mp", "models")
     if not os.path.isdir(models_dir):
         return
 
-    # https://cdn-2.matterport.com/models/<hash>/assets/<rest>?<query>
-    # -> /tour/<matterport_id>/models/<hash>/assets/<rest>
-    # matterport-dl mirrors the CDN's full path locally (including
-    # models/<hash>/assets/...), so we only swap the domain+scheme for
-    # our local proxy prefix and drop the query string — the rest of
-    # the path must stay untouched to match what's actually on disk.
     cdn_pattern = re.compile(
         r'https://cdn-2\.matterport\.com/(models/[0-9a-fA-F]+/assets/[^"?]*)(\?[^"]*)?'
     )
@@ -316,9 +300,6 @@ def rewrite_graph_json_cdn_urls(matterport_id: str, download_root: str) -> None:
             if count:
                 with open(path, "w", encoding="utf-8") as f:
                     f.write(new_content)
-                print(
-                    f"[rewrite_graph_json_cdn_urls] Patched {count} CDN "
-                    f"asset URL(s) in: {path}"
-                )
+                print(f"[rewrite_graph_json_cdn_urls] Patched {count} CDN asset URL(s) in: {path}")
         except OSError as e:
             print(f"[rewrite_graph_json_cdn_urls] Could not patch {path}: {e}")

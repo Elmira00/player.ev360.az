@@ -101,7 +101,7 @@ def ensure_server_running(matterport_id: str) -> int:
             _redis_client.set(
                 registry_key,
                 json.dumps({"port": port, "pid": process.pid}),
-                ex=3600,
+                ex=86400,
             )
             return port
         finally:

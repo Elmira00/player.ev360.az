@@ -1,3 +1,4 @@
+from curl_cffi import requests as cffi_requests
 import mimetypes
 import os
 import re
@@ -166,6 +167,65 @@ def submit_zip_view(request):
 
 
 @login_required
+def upload_chunk_view(request):
+    """Receives one chunk of a large ZIP at a time (bypasses Cloudflare's
+    hard 100MB upload cap, which blocks single large requests before they
+    even reach nginx). Chunks are appended to a per-upload temp file in
+    order; once the final chunk arrives, the reassembled ZIP is handed off
+    to the existing process_zip_upload task exactly as a normal upload."""
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    upload_key = request.POST.get("upload_key", "")
+    chunk_index = request.POST.get("chunk_index")
+    total_chunks = request.POST.get("total_chunks")
+    original_filename = request.POST.get("filename", "")
+    chunk_file = request.FILES.get("chunk")
+
+    if not upload_key or chunk_index is None or total_chunks is None or not chunk_file:
+        return JsonResponse({"error": "Missing required fields"}, status=400)
+
+    # upload_key comes from the client (crypto.randomUUID()) — sanitize it
+    # to a safe hex-only string before using it in a filesystem path.
+    safe_key = "".join(c for c in upload_key if c.isalnum())[:64]
+    if not safe_key:
+        return JsonResponse({"error": "Invalid upload_key"}, status=400)
+
+    try:
+        chunk_index = int(chunk_index)
+        total_chunks = int(total_chunks)
+    except ValueError:
+        return JsonResponse({"error": "chunk_index/total_chunks must be integers"}, status=400)
+
+    upload_dir = os.path.join(settings.BASE_DIR, "tmp_uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+    temp_zip_path = os.path.join(upload_dir, f"chunked_{safe_key}.zip")
+
+    # First chunk creates/truncates the file; every later chunk appends.
+    mode = "wb" if chunk_index == 0 else "ab"
+    with open(temp_zip_path, mode) as dest:
+        for piece in chunk_file.chunks():
+            dest.write(piece)
+
+    is_last_chunk = (chunk_index == total_chunks - 1)
+
+    if is_last_chunk:
+        if not original_filename.lower().endswith(".zip"):
+            original_filename = original_filename + ".zip"
+
+        upload = TourUpload.objects.create(
+            tour=None,
+            source_type=TourUpload.SourceType.ZIP,
+            original_zip_name=original_filename,
+            status=TourUpload.Status.PENDING,
+        )
+        process_zip_upload.delay(upload.id, temp_zip_path)
+        return JsonResponse({"status": "complete", "upload_id": upload.id})
+
+    return JsonResponse({"status": "chunk_received", "chunk_index": chunk_index})
+
+
+@login_required
 def dashboard_view(request):
     query = request.GET.get("q", "").strip()
     tours = Tour.objects.all()
@@ -258,13 +318,17 @@ def tour_proxy_view(request, matterport_id, subpath=""):
     if subpath == "api/mp/models/graph" and "GetModelAssets" in query:
         cdn_url = f"https://my.matterport.com/api/mp/models/graph?{query}"
         try:
-            cdn_req = urllib.request.Request(cdn_url, method="GET")
-            with urllib.request.urlopen(cdn_req, timeout=10) as cdn_resp:
-                return HttpResponse(
-                    cdn_resp.read(),
-                    status=cdn_resp.status,
-                    content_type="application/json",
-                )
+            cdn_resp = cffi_requests.get(
+                cdn_url, 
+                impersonate="chrome", 
+                proxies={"http": "socks5://127.0.0.1:9050", "https": "socks5://127.0.0.1:9050"}, 
+                timeout=10
+            )
+            return HttpResponse(
+                cdn_resp.content,
+                status=cdn_resp.status_code,
+                content_type="application/json",
+            )
         except Exception as e:
             print(f"[tour_proxy_view] GetModelAssets live fetch failed, falling back to empty stub: {e}")
             return HttpResponse(
@@ -274,13 +338,17 @@ def tour_proxy_view(request, matterport_id, subpath=""):
     if subpath == "api/mp/models/graph" and "GetSweeps" in query:
         cdn_url = f"https://my.matterport.com/api/mp/models/graph?{query}"
         try:
-            cdn_req = urllib.request.Request(cdn_url, method="GET")
-            with urllib.request.urlopen(cdn_req, timeout=10) as cdn_resp:
-                return HttpResponse(
-                    cdn_resp.read(),
-                    status=cdn_resp.status,
-                    content_type="application/json",
-                )
+            cdn_resp = cffi_requests.get(
+                cdn_url, 
+                impersonate="chrome", 
+                proxies={"http": "socks5://127.0.0.1:9050", "https": "socks5://127.0.0.1:9050"}, 
+                timeout=10
+            )
+            return HttpResponse(
+                cdn_resp.content,
+                status=cdn_resp.status_code,
+                content_type="application/json",
+            )
         except Exception as e:
             print(f"[tour_proxy_view] GetSweeps live fetch failed, falling back to empty stub: {e}")
             return HttpResponse(
